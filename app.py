@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify, make_response, Response
 from flask.typing import ResponseReturnValue
 from flask_cors import CORS
 import os
+import shutil
 import requests
 from urllib.parse import urlparse, urlunparse, parse_qs
 
@@ -32,19 +33,33 @@ DISCORD_WEBHOOK_URL = os.getenv('DISCORD_WEBHOOK_URL', '').strip()
 PARTY_SITE_URL = os.getenv('PARTY_SITE_URL', '').strip()
 
 def init_driver():
-    """Chrome 드라이버 초기화"""
+    """Chrome 드라이버 초기화 (로컬/Render 모두 지원)"""
     chrome_options = Options()
-    chrome_options.add_argument('--headless')  # 백그라운드 실행
+    chrome_options.add_argument('--headless=new')  # 최신 헤드리스 모드
     chrome_options.add_argument('--no-sandbox')
     chrome_options.add_argument('--disable-dev-shm-usage')
     chrome_options.add_argument('--disable-blink-features=AutomationControlled')
     chrome_options.add_argument('--disable-gpu')
     chrome_options.add_argument('--window-size=1920,1080')
     chrome_options.add_argument('user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
-    
-    # 최신 ChromeDriver 자동 다운로드
+
+    chrome_path = os.getenv('CHROME_BIN') or shutil.which('chromium-browser') or shutil.which('chromium') or shutil.which('google-chrome')
+    driver_path = os.getenv('CHROMEDRIVER_PATH') or shutil.which('chromedriver')
+
+    if chrome_path:
+        chrome_options.binary_location = chrome_path
+        print(f"[INFO] chrome binary: {chrome_path}")
+    else:
+        print("[WARN] chrome binary not found; webdriver-manager fallback")
+
     try:
-        service = Service(ChromeDriverManager().install())
+        if driver_path:
+            print(f"[INFO] chromedriver path: {driver_path}")
+            service = Service(driver_path)
+        else:
+            print("[INFO] using webdriver-manager to download chromedriver")
+            service = Service(ChromeDriverManager().install())
+
         driver = webdriver.Chrome(service=service, options=chrome_options)
         print("[OK] Chrome 드라이버 초기화 성공!")
         return driver
