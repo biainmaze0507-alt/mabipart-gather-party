@@ -9,7 +9,7 @@ from urllib.parse import urlparse, urlunparse, parse_qs
 try:
     from dotenv import load_dotenv
     load_dotenv()
-    print("🧩 .env 로드 완료")
+    print("[OK] .env 로드 완료")
 except Exception:
     # 미설치 또는 로드 실패 시 무시
     pass
@@ -46,10 +46,10 @@ def init_driver():
     try:
         service = Service(ChromeDriverManager().install())
         driver = webdriver.Chrome(service=service, options=chrome_options)
-        print("✅ Chrome 드라이버 초기화 성공!")
+        print("[OK] Chrome 드라이버 초기화 성공!")
         return driver
     except Exception as e:
-        print(f"❌ Chrome 드라이버 초기화 실패: {e}")
+        print(f"[ERROR] Chrome 드라이버 초기화 실패: {e}")
         raise
 
 def search_character(character_name):
@@ -57,14 +57,14 @@ def search_character(character_name):
     driver = None
     try:
         print(f"\n{'='*50}")
-        print(f"🔍 검색 시작: {character_name}")
+        print(f"[INFO] 검색 시작: {character_name}")
         print(f"{'='*50}")
         
         driver = init_driver()
         
         # 알리사 서버로 직접 접속
         url = 'https://mabinogimobile.nexon.com/Ranking/List?t=1&server=알리사'
-        print(f"📄 페이지 로딩: {url}")
+        print(f"[LOG] 페이지 로딩: {url}")
         driver.get(url)
         
         # 페이지 로딩 대기
@@ -72,7 +72,7 @@ def search_character(character_name):
         time.sleep(3)
         
         # 알리사 서버 선택
-        print("🌐 알리사 서버 선택 중...")
+        print("[LOG] 알리사 서버 선택 중...")
         try:
             # 서버 선택 박스 클릭
             server_box = wait.until(
@@ -87,55 +87,55 @@ def search_character(character_name):
             )
             driver.execute_script("arguments[0].click();", alisa_option)
             time.sleep(2)
-            print("✅ 알리사 서버 선택 완료")
+            print("[OK] 알리사 서버 선택 완료")
         except Exception as e:
-            print(f"⚠️ 서버 선택 실패: {e}")
+            print(f"[WARN] 서버 선택 실패: {e}")
         
         # 검색창 찾기 및 입력
-        print("🔎 검색창 찾는 중...")
+        print("[LOG] 검색창 찾는 중...")
         search_input = wait.until(
             EC.presence_of_element_located((By.CSS_SELECTOR, 'input[type="text"]'))
         )
-        print(f"✅ 검색창 발견, 입력 중: {character_name}")
+        print(f"[OK] 검색창 발견, 입력 중: {character_name}")
         search_input.clear()
         search_input.send_keys(character_name)
         search_input.send_keys(Keys.RETURN)
         
-        print("⏳ 검색 결과 대기 중...")
+        print("[LOG] 검색 결과 대기 중...")
         time.sleep(4)  # 검색 결과 로딩 대기
         
         # 현재 URL 확인
-        print(f"현재 URL: {driver.current_url}")
+        print(f"[LOG] 현재 URL: {driver.current_url}")
         
         # data-charactername 속성으로 캐릭터 찾기
-        print(f"👤 캐릭터 찾는 중: {character_name}")
+        print(f"[LOG] 캐릭터 찾는 중: {character_name}")
         
         try:
             character_dd = wait.until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, f'dd[data-charactername="{character_name}"]'))
             )
-            print("✅ 캐릭터 발견!")
+            print("[OK] 캐릭터 발견!")
         except:
-            print("❌ 캐릭터를 찾을 수 없습니다. 스크린샷 저장 중...")
+            print("[ERROR] 캐릭터를 찾을 수 없습니다. 스크린샷 저장 중...")
             driver.save_screenshot('not_found.png')
-            print("스크린샷 저장됨: not_found.png")
+            print("[LOG] 스크린샷 저장됨: not_found.png")
             
             # 페이지 HTML 일부 출력
             page_source = driver.page_source
             if character_name in page_source:
-                print("⚠️ 페이지에는 캐릭터명이 있지만 요소를 찾지 못했습니다.")
+                print("[WARN] 페이지에는 캐릭터명이 있지만 요소를 찾지 못했습니다.")
             else:
-                print("⚠️ 페이지에 캐릭터명이 없습니다. 검색 실패했을 가능성이 큽니다.")
+                print("[WARN] 페이지에 캐릭터명이 없습니다. 검색 실패했을 가능성이 큽니다.")
             
             raise Exception(f"캐릭터 '{character_name}'을(를) 찾을 수 없습니다.")
         
         # 부모 li 요소 찾기
         parent_li = character_dd.find_element(By.XPATH, './ancestor::li[contains(@class, "item")]')
-        print(f"부모 li 요소 찾음")
+        print("[LOG] 부모 li 요소 찾음")
         
         # 모든 div 요소 찾기
         divs = parent_li.find_elements(By.TAG_NAME, 'div')
-        print(f"div 요소 개수: {len(divs)}")
+        print(f"[LOG] div 요소 개수: {len(divs)}")
         
         # 각 정보 추출 - 순서대로 가져오기
         rank = ""
@@ -148,32 +148,32 @@ def search_character(character_name):
             # div[0]: 순위
             rank_dt = divs[0].find_element(By.TAG_NAME, 'dt').text.strip()
             rank = rank_dt
-            print(f"순위: {rank}")
+            print(f"[LOG] 순위: {rank}")
             
             # div[1]: 서버명
             server_dd = divs[1].find_element(By.TAG_NAME, 'dd').text.strip()
             server = server_dd
-            print(f"서버: {server}")
+            print(f"[LOG] 서버: {server}")
             
             # div[2]: 캐릭터명
             name_dd = divs[2].find_element(By.TAG_NAME, 'dd').text.strip()
             name = name_dd
-            print(f"캐릭터명: {name}")
+            print(f"[LOG] 캐릭터명: {name}")
             
             # div[3]: 클래스
             class_dd = divs[3].find_element(By.TAG_NAME, 'dd').text.strip()
             char_class = class_dd
-            print(f"클래스: {char_class}")
+            print(f"[LOG] 클래스: {char_class}")
             
             # div[4]: 전투력
             power_dd = divs[4].find_element(By.TAG_NAME, 'dd').text.strip()
             power = power_dd
-            print(f"전투력: {power}")
+            print(f"[LOG] 전투력: {power}")
             
         except Exception as e:
-            print(f"⚠️ 정보 추출 중 에러: {e}")
+            print(f"[WARN] 정보 추출 중 에러: {e}")
         
-        print(f"✅ 검색 완료!")
+        print("[OK] 검색 완료!")
         print(f"   순위: {rank}")
         print(f"   서버: {server}")
         print(f"   캐릭터명: {name}")
@@ -199,14 +199,14 @@ def search_character(character_name):
         }
         
     except Exception as e:
-        print(f"\n❌ 에러 발생: {str(e)}")
+        print(f"\n[ERROR] 에러 발생: {str(e)}")
         traceback.print_exc()
         
         # 스크린샷 저장 (디버깅용)
         if driver:
             try:
                 driver.save_screenshot('error_screenshot.png')
-                print("📸 에러 스크린샷 저장: error_screenshot.png")
+                print("[LOG] 에러 스크린샷 저장: error_screenshot.png")
             except:
                 pass
         
@@ -217,7 +217,7 @@ def search_character(character_name):
     
     finally:
         if driver:
-            print("🔒 브라우저 종료\n")
+            print("[LOG] 브라우저 종료\n")
             driver.quit()
 
 
@@ -236,7 +236,7 @@ def send_discord_notification(party: dict, count: int):
     """디스코드 웹훅으로 파티 등록 알림 전송"""
     try:
         if not DISCORD_WEBHOOK_URL:
-            print("ℹ️ DISCORD_WEBHOOK_URL 미설정: 알림 건너뜀")
+            print("[INFO] DISCORD_WEBHOOK_URL 미설정: 알림 건너뜀")
             return
 
         sector = party.get('sector', '')
@@ -278,11 +278,11 @@ def send_discord_notification(party: dict, count: int):
 
         resp = requests.post(DISCORD_WEBHOOK_URL, json=payload, timeout=10)
         if 200 <= resp.status_code < 300:
-            print("✅ 디스코드 알림 전송 성공")
+            print("[OK] 디스코드 알림 전송 성공")
         else:
-            print(f"⚠️ 디스코드 알림 실패: {resp.status_code} {resp.text}")
+            print(f"[WARN] 디스코드 알림 실패: {resp.status_code} {resp.text}")
     except Exception as e:
-        print(f"⚠️ 디스코드 알림 예외: {e}")
+        print(f"[WARN] 디스코드 알림 예외: {e}")
 
 
 def get_party_count(sheets_url_with_action: str, party: dict) -> int:
@@ -315,7 +315,7 @@ def get_party_count(sheets_url_with_action: str, party: dict) -> int:
         count = sum(1 for r in rows if matches(r))
         return count
     except Exception as e:
-        print(f"⚠️ 등록 인원 조회 실패: {e}")
+        print(f"[WARN] 등록 인원 조회 실패: {e}")
         return 0
 
 # 응답 파싱 유틸리티: JSON 파싱 실패 시 텍스트로 래핑
@@ -378,7 +378,7 @@ def proxy_sheets() -> ResponseReturnValue:
                     count = get_party_count(sheets_url, payload)
                     send_discord_notification(payload, count)
                 except Exception as e:
-                    print(f"⚠️ 알림 처리 중 예외: {e}")
+                    print(f"[WARN] 알림 처리 중 예외: {e}")
 
             return jsonify(resp_json)
         elif request.method == 'DELETE':
@@ -388,12 +388,12 @@ def proxy_sheets() -> ResponseReturnValue:
             # 명시적 처리: 허용되지 않은 메서드
             return make_response(jsonify({'success': False, 'error': 'Method Not Allowed'}), 405)
     except Exception as e:
-        print(f"프록시 에러: {e}")
+        print(f"[ERROR] 프록시 에러: {e}")
         return make_response(jsonify({'success': False, 'error': str(e)}), 500)
 
 if __name__ == '__main__':
     print("=" * 50)
-    print("🎮 마비노기 모바일 전투력 조회 서버 시작")
+    print("[START] 마비노기 모바일 전투력 조회 서버 시작")
     print("=" * 50)
     print("API 엔드포인트: http://localhost:5000/api/search?name=캐릭터명")
     print("헬스체크: http://localhost:5000/health")

@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: mabinogi-party
+    env: python
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn app:app"
+    envVars:
+      - key: DISCORD_WEBHOOK_URL
+        sync: false
+      - key: PARTY_SITE_URL
+        sync: false
+      - key: PYTHON_VERSION
+        value: 3.11.0
