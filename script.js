@@ -48,14 +48,9 @@ async function loadPartiesFromGoogleSheets() {
     }
 
     try {
-        const targetUrl = `${GOOGLE_SCRIPT_URL}?action=getParties`;
-        const proxyUrl = `${API_BASE_URL}/api/proxy/sheets?url=${encodeURIComponent(targetUrl)}`;
-        console.log('파티 목록 로드 요청(프록시):', proxyUrl);
-        const response = await fetch(proxyUrl, {
-            headers: {
-                'ngrok-skip-browser-warning': 'true'
-            }
-        });
+        const url = `${GOOGLE_SCRIPT_URL}?action=getParties`;
+        console.log('파티 목록 로드 요청:', url);
+        const response = await fetch(url);
         const data = await response.json();
 
         if (data.success) {
@@ -80,14 +75,12 @@ async function savePartyToGoogleSheets(partyData) {
     try {
         console.log('파티 데이터 전송 중:', partyData);
 
-        const targetUrl = `${GOOGLE_SCRIPT_URL}?action=addParty`;
-        const proxyUrl = `${API_BASE_URL}/api/proxy/sheets?url=${encodeURIComponent(targetUrl)}`;
+        const url = `${GOOGLE_SCRIPT_URL}?action=addParty`;
 
-        const response = await fetch(proxyUrl, {
+        const response = await fetch(url, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
-                'ngrok-skip-browser-warning': 'true'
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify(partyData)
         });
@@ -119,14 +112,12 @@ async function deletePartyFromGoogleSheets(partyId) {
     try {
         console.log('파티 삭제 요청:', partyId);
 
-        const targetUrl = `${GOOGLE_SCRIPT_URL}?action=deleteParty`;
-        const proxyUrl = `${API_BASE_URL}/api/proxy/sheets?url=${encodeURIComponent(targetUrl)}`;
+        const url = `${GOOGLE_SCRIPT_URL}?action=deleteParty`;
 
-        const response = await fetch(proxyUrl, {
+        const response = await fetch(url, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
-                'ngrok-skip-browser-warning': 'true'
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({ id: partyId })
         });
