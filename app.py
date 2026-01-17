@@ -41,6 +41,8 @@ def init_driver():
     chrome_options.add_argument('--disable-blink-features=AutomationControlled')
     chrome_options.add_argument('--disable-gpu')
     chrome_options.add_argument('--window-size=1920,1080')
+    chrome_options.add_argument('--lang=ko-KR')  # 한국어 페이지 로딩
+    chrome_options.add_argument('--disable-extensions')
     chrome_options.add_argument('user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
 
     chrome_path = os.getenv('CHROME_BIN') or shutil.which('chromium-browser') or shutil.which('chromium') or shutil.which('google-chrome')
@@ -117,7 +119,8 @@ def search_character(character_name):
         search_input.send_keys(Keys.RETURN)
         
         print("[LOG] 검색 결과 대기 중...")
-        time.sleep(4)  # 검색 결과 로딩 대기
+        time.sleep(6)  # 검색 결과 로딩 대기 (느린 환경 대비)
+        print(f"[LOG] 페이지 타이틀: {driver.title}")
         
         # 현재 URL 확인
         print(f"[LOG] 현재 URL: {driver.current_url}")
@@ -130,10 +133,13 @@ def search_character(character_name):
                 EC.presence_of_element_located((By.CSS_SELECTOR, f'dd[data-charactername="{character_name}"]'))
             )
             print("[OK] 캐릭터 발견!")
-        except:
+        except Exception as e:
             print("[ERROR] 캐릭터를 찾을 수 없습니다. 스크린샷 저장 중...")
             driver.save_screenshot('not_found.png')
             print("[LOG] 스크린샷 저장됨: not_found.png")
+            print(f"[LOG] 페이지 타이틀: {driver.title}")
+            print(f"[LOG] 현재 URL: {driver.current_url}")
+            print(f"[LOG] 예외: {e}")
             
             # 페이지 HTML 일부 출력
             page_source = driver.page_source
