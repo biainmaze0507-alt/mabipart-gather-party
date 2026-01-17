@@ -5,6 +5,7 @@ import os
 import shutil
 import requests
 from urllib.parse import urlparse, urlunparse, parse_qs
+from urllib.parse import quote, urljoin
 
 # .env 지원 (선택): python-dotenv이 설치되어 있다면 로드
 try:
@@ -24,6 +25,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.keys import Keys
 import time
 import traceback
+from bs4 import BeautifulSoup
 
 app = Flask(__name__)
 CORS(app)
@@ -31,6 +33,9 @@ CORS(app)
 # 환경 변수
 DISCORD_WEBHOOK_URL = os.getenv('DISCORD_WEBHOOK_URL', '').strip()
 PARTY_SITE_URL = os.getenv('PARTY_SITE_URL', '').strip()
+SEARCH_MODE = os.getenv('SEARCH_MODE', 'HTTP').strip().upper()  # HTTP | SELENIUM
+SERVER_ID = int(os.getenv('SERVER_ID', '4'))  # 알리사 기본
+MAX_SCAN_PAGES = int(os.getenv('MAX_SCAN_PAGES', '10'))
 
 def init_driver():
     """Chrome 드라이버 초기화 (로컬/Render 모두 지원)"""
@@ -70,7 +75,126 @@ def init_driver():
         raise
 
 def search_character(character_name):
-    """캐릭터 정보 검색 - 알리사 서버 고정"""
+    """캐릭터 정보 검색 - 기본 HTTP 파싱 (Render 호환), 필요시 Selenium"""
+    if SEARCH_MODE == 'HTTP':
+        return search_character_http(character_name)
+    else:
+        return search_character_selenium(character_name)
+
+def search_character_http(character_name: str):
+    """XHR 엔드포인트(/Ranking/List/rankdata)로 폼 데이터를 POST해 결과 HTML을 파싱합니다."""
+    try:
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': '*/*',
+            'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
+            'Origin': 'https://mabinogimobile.nexon.com',
+            'Referer': 'https://mabinogimobile.nexon.com/Ranking/List?t=1',
+            'X-Requested-With': 'XMLHttpRequest',
+        }
+
+        def extract_from_li(li, fallback_server_name: str):
+            def safe_text(selector):
+                el = li.select_one(selector)
+                return el.get_text(strip=True) if el else ''
+            rank = safe_text('div:nth-of-type(1) dt')
+            server = safe_text('div:nth-of-type(2) dd')
+            name = safe_text('div:nth-of-type(3) dd')
+            char_class = safe_text('div:nth-of-type(4) dd')
+            power = safe_text('div:nth-of-type(5) dd')
+            return rank, (server or fallback_server_name), name, char_class, power
+
+        # 1) 우선 검색어 전달로 정확 매칭 시도 (페이지 1)
+        form = {
+            't': '1',
+            'pageno': '1',
+            's': str(SERVER_ID),
+            'c': '0',
+            'search': character_name,
+        }
+        url = 'https://mabinogimobile.nexon.com/Ranking/List/rankdata'
+        resp = requests.post(url, headers=headers, data=form, timeout=15)
+        if resp.ok:
+            soup = BeautifulSoup(resp.text, 'html.parser')
+            # data-charactername 우선
+            target_dd = soup.select_one(f'dd[data-charactername="{character_name}"]')
+            parent_li = target_dd.find_parent('li') if target_dd else None
+            if not parent_li:
+                for li in soup.select('li.item'):
+                    try:
+                        name_dd = li.select('div:nth-of-type(3) dd')
+                        name_text = (name_dd[0].get_text(strip=True) if name_dd else '').strip()
+                        if name_text == character_name:
+                            parent_li = li
+                            break
+                    except Exception:
+                        continue
+            if parent_li:
+                rank, server, name, char_class, power = extract_from_li(parent_li, '알리사')
+                return {
+                    'success': True,
+                    'data': {
+                        'rank': rank,
+                        'server': server,
+                        'name': name or character_name,
+                        'class': char_class,
+                        'power': power,
+                        'rank_range': '',
+                    }
+                }
+
+        # 2) 검색어 없이 페이지 스캔 (1..MAX_SCAN_PAGES)
+        for page in range(1, MAX_SCAN_PAGES + 1):
+            form_scan = {
+                't': '1',
+                'pageno': str(page),
+                's': str(SERVER_ID),
+                'c': '0',
+                'search': '',
+            }
+            resp2 = requests.post(url, headers=headers, data=form_scan, timeout=15)
+            if not resp2.ok:
+                continue
+            soup2 = BeautifulSoup(resp2.text, 'html.parser')
+            target_dd2 = soup2.select_one(f'dd[data-charactername="{character_name}"]')
+            parent_li2 = target_dd2.find_parent('li') if target_dd2 else None
+            if not parent_li2:
+                for li in soup2.select('li.item'):
+                    try:
+                        name_dd = li.select('div:nth-of-type(3) dd')
+                        name_text = (name_dd[0].get_text(strip=True) if name_dd else '').strip()
+                        if name_text == character_name:
+                            parent_li2 = li
+                            break
+                    except Exception:
+                        continue
+            if parent_li2:
+                rank, server, name, char_class, power = extract_from_li(parent_li2, '알리사')
+                return {
+                    'success': True,
+                    'data': {
+                        'rank': rank,
+                        'server': server,
+                        'name': name or character_name,
+                        'class': char_class,
+                        'power': power,
+                        'rank_range': f'page {page}',
+                    }
+                }
+
+        return {
+            'success': False,
+            'error': f'캐릭터 "{character_name}"을(를) 찾을 수 없습니다. (XHR 파싱)'
+        }
+    except Exception as e:
+        print(f"[ERROR] XHR 파싱 실패: {e}")
+        return {
+            'success': False,
+            'error': f'캐릭터 "{character_name}" 조회 중 오류(XHR): {e}'
+        }
+
+def search_character_selenium(character_name: str):
+    """기존 Selenium 기반 검색 (로컬 개발용 또는 환경 지원 시)"""
     driver = None
     try:
         print(f"\n{'='*50}")

@@ -825,7 +825,7 @@ async function searchCharacter() {
         resultDiv.innerHTML = `
             <div class="error-message">
                 서버 연결 실패 (${error.message})<br>
-                <small>Render 서버 상태: https://mabinogi-party.onrender.com/health</small>
+                <small>Render 서버 상태: ${API_BASE_URL}/health</small>
             </div>
         `;
         currentSearchResult = null;
