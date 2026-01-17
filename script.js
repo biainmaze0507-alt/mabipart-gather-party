@@ -824,7 +824,8 @@ async function searchCharacter() {
         console.error('검색 에러:', error);
         resultDiv.innerHTML = `
             <div class="error-message">
-                서버 연결 실패. ngrok이 실행 중인지 확인해주세요.
+                서버 연결 실패 (${error.message})<br>
+                <small>Render 서버 상태: https://mabinogi-party.onrender.com/health</small>
             </div>
         `;
         currentSearchResult = null;
