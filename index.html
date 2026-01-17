@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>마비노기 모바일 - 숙제 & 파티 모집</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 상단 리본 메뉴 -->
+        <header class="ribbon-menu">
+            <div class="logo">마비노기 모바일</div>
+            <nav class="tabs">
+                <button class="tab-button active" data-tab="dailies">개인 숙제 기록</button>
+                <button class="tab-button" data-tab="party">파티 모집</button>
+            </nav>
+        </header>
+
+        <!-- 개인 숙제 기록 섹션 -->
+        <section id="dailies-section" class="content-section active">
+            <div class="section-header">
+                <h1>개인 숙제 기록</h1>
+                <button class="btn-add-character" id="addCharacterBtn">+ 캐릭터 추가</button>
+            </div>
+
+            <div class="characters-container" id="charactersContainer">
+                <!-- 캐릭터 카드들이 동적으로 추가됨 -->
+            </div>
+        </section>
+
+        <!-- 파티 모집 섹션 -->
+        <section id="party-section" class="content-section">
+            <div class="section-header">
+                <h1>파티 모집</h1>
+                <button class="btn-primary" id="addPartyBtn">+ 파티 등록</button>
+            </div>
+
+            <div class="party-filters">
+                <select id="filterSector" class="filter-select">
+                    <option value="">전체 대분류</option>
+                    <option value="어비스">어비스</option>
+                    <option value="레이드">레이드</option>
+                </select>
+                
+                <select id="filterContent" class="filter-select">
+                    <option value="">전체 콘텐츠</option>
+                    <option value="어비스">어비스</option>
+                    <option value="글라스기브넨">글라스기브넨</option>
+                    <option value="서큐버스">서큐버스</option>
+                    <option value="타바르타스">타바르타스</option>
+                    <option value="에이렐">에이렐</option>
+                </select>
+                
+                <select id="filterDifficulty" class="filter-select">
+                    <option value="">전체 난이도</option>
+                    <option value="입문">입문</option>
+                    <option value="어려움">어려움</option>
+                    <option value="매우 어려움">매우 어려움</option>
+                    <option value="기타">기타</option>
+                </select>
+            </div>
+
+            <div class="party-list" id="partyList">
+                <!-- 파티 모집 항목들이 동적으로 추가됨 -->
+            </div>
+        </section>
+    </div>
+
+    <!-- 캐릭터 추가 모달 -->
+    <div id="addCharacterModal" class="modal">
+        <div class="modal-content small">
+            <div class="modal-header">
+                <h2>캐릭터 추가</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>캐릭터 이름</label>
+                    <input type="text" id="newCharacterName" placeholder="캐릭터 이름 입력">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="cancelAddCharacter">취소</button>
+                <button class="btn-primary" id="confirmAddCharacter">추가</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 파티 등록 모달 -->
+    <div id="addPartyModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>파티 등록</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>콘텐츠 대분류</label>
+                    <select id="partySector" class="form-input">
+                        <option value="">선택하세요</option>
+                        <option value="어비스">어비스</option>
+                        <option value="레이드">레이드</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="contentGroup" style="display: none;">
+                    <label>콘텐츠</label>
+                    <select id="partyContent" class="form-input">
+                        <option value="">선택하세요</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>난이도</label>
+                    <select id="partyDifficulty" class="form-input">
+                        <option value="">선택하세요</option>
+                        <option value="입문">입문</option>
+                        <option value="어려움">어려움</option>
+                        <option value="매우 어려움">매우 어려움</option>
+                        <option value="기타">기타 (직접 입력)</option>
+                    </select>
+                    <input type="text" id="partyDifficultyCustom" class="form-input" placeholder="난이도 직접 입력" style="display: none; margin-top: 8px;">
+                </div>
+
+                <div class="form-group">
+                    <label>캐릭터 정보</label>
+                    <button type="button" class="btn-search" id="searchCharacterBtn">캐릭터 검색</button>
+                    <div id="characterInfo" class="character-info-display">
+                        <div class="info-item">
+                            <span class="info-label">캐릭터:</span>
+                            <span class="info-value" id="displayCharacterName">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">클래스:</span>
+                            <span class="info-value" id="displayClass">-</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">전투력:</span>
+                            <span class="info-value" id="displayPower">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="cancelAddParty">취소</button>
+                <button class="btn-primary" id="confirmAddParty">등록</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 캐릭터 검색 모달 -->
+    <div id="searchCharacterModal" class="modal">
+        <div class="modal-content small">
+            <div class="modal-header">
+                <h2>캐릭터 검색</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>캐릭터 이름</label>
+                    <div class="search-input-group">
+                        <input type="text" id="searchCharacterInput" placeholder="캐릭터 이름 입력">
+                        <button class="btn-primary" id="executeSearchBtn">검색</button>
+                    </div>
+                </div>
+                <div id="searchResult" class="search-result">
+                    <!-- 검색 결과가 표시됨 -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="cancelSearch">취소</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
