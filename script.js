@@ -1,6 +1,6 @@
 // ==================== 상수 정의 ====================
 const MAX_CHARACTERS = 6;
-const API_BASE_URL = 'http://localhost:5000';  // 로컬 Flask 서버
+const API_BASE_URL = 'https://mabinogi-party.onrender.com';
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxtYFfOn9peeviVjz_DrzYwnimBDMbxMlwl91vDHt3ZOKA4aAIddv7MZzmtea43m4B76w/exec'; // Google Apps Script 웹 앱 URL
 
 // ==================== 데이터 구조 ====================

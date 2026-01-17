@@ -1,61 +1,26 @@
-# 배포 가이드 (옵션 A + 디스코드 알림)
+# 디스코드 알림 설정 가이드 (선택사항)
 
-이 가이드는 Flask 백엔드를 중앙에 배포하여 사용자가 웹사이트만 접속해 서비스를 이용하도록 구성하고, 파티 등록 시 디스코드 알림을 전송하는 방법을 설명합니다.
+파티 등록 시 디스코드로 자동 알림을 받으려면 Render.com 환경 변수를 설정하세요.
 
-## 1. 준비 사항
-- Google Apps Script 웹 앱 URL (파티 시트)
-- 디스코드 채널의 웹훅 URL
-- 배포 대상(Windows VM, Linux 서버, Render/Railway/Azure 등)
+## 1. 디스코드 웹훅 URL 생성
+1. 디스코드 채널 설정 → 연동 → 웹훅
+2. 새 웹훅 생성 → URL 복사
 
-## 2. 환경 변수 설정
-- `DISCORD_WEBHOOK_URL`: 디스코드 웹훅 URL
-- `PARTY_SITE_URL`: 파티 모집 사이트 주소(선택, 있으면 알림에 링크 포함)
+## 2. Render.com 환경 변수 설정
+1. https://dashboard.render.com 접속
+2. `mabinogi-party` 서비스 선택
+3. **Environment** 탭 클릭
+4. **Add Environment Variable** 클릭
+5. 다음 변수 추가:
+   - **Key**: `DISCORD_WEBHOOK_URL`
+   - **Value**: (복사한 웹훅 URL)
+   
+   - **Key**: `PARTY_SITE_URL` (선택)
+   - **Value**: (사이트 URL, 예: https://your-site.com)
 
-Windows PowerShell 예시:
+6. **Save Changes** 클릭 (자동 재배포됨)
 
-```powershell
-$env:DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/...."
-$env:PARTY_SITE_URL = "https://your-domain.example.com"
-```
-
-Linux/Bash 예시:
-
-```bash
-export DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/..."
-export PARTY_SITE_URL="https://your-domain.example.com"
-```
-
-### .env 파일 사용 (선택)
-- `app.py`는 `python-dotenv`가 설치되어 있으면 `.env`를 자동 로드합니다.
-- 예시 파일: [.env.example](.env.example)를 `.env`로 복사 후 값 채우기
-
-설치 및 실행 예시:
-
-```bash
-pip install python-dotenv
-python app.py
-```
-
-## 3. 백엔드 배포
-1) 의존성 설치 및 로컬 확인
-
-```bash
-pip install flask flask-cors selenium webdriver-manager requests
-python app.py
-```
-
-2) 서버/클라우드에 배포 후 도메인 확인 (예: `https://api.your-domain.example.com`)
-
-## 4. 프런트 설정
-- `script.js`의 `API_BASE_URL`을 배포된 Flask 서버 도메인으로 변경
-- `GOOGLE_SCRIPT_URL`은 기존 Apps Script 웹 앱 URL 유지
-
-> PARTY_SITE_URL은 실제 공개된 프런트 주소여야 하며, 임의의 도메인을 적어도 접속/링크는 동작하지 않습니다. 실제로 배포된 정적 사이트 URL을 사용하세요.
-
-## 5. 디스코드 알림 동작
-- 프런트에서 파티 등록 시, Flask 프록시가 Apps Script로 `addParty` 요청을 전달하고 성공 응답 후 디스코드 웹훅으로 알림을 전송합니다.
-- 알림 형식:
-
+## 3. 알림 형식
 ```
 새로운 파티 모집 정보가 등록되었습니다.
 > 대분류: 레이드
@@ -65,19 +30,21 @@ python app.py
 > 클래스: 화염술사
 > 전투력: 58,282
 현재 레이드 에이렐, 어려움 등록 인원: 1명
-[파티 모집 사이트 바로가기] https://your-domain.example.com
+[파티 모집 사이트 바로가기] https://your-site.com
 ```
 
-- 어비스의 경우 콘텐츠 라인은 생략되며, "현재 어비스, 매우 어려움 등록 인원: N명" 형태로 집계 표시됩니다.
+---
 
-## 6. Apps Script 재배포 주의
-- Google Apps Script 코드를 변경한 경우, 웹 앱을 "수정 배포"로 재배포해야 변경 사항이 반영됩니다.
-
-## 7. 문제 해결
-- 알림이 오지 않으면 `DISCORD_WEBHOOK_URL` 설정 여부 확인
-- 프록시 에러 로그 확인(서버 콘솔)
-- 파티 집계는 시트의 최신 데이터를 기준으로 하므로 네트워크 지연 시 1~2초 차이가 날 수 있음
 # 구글 스프레드시트 연동 설정 가이드
+
+## ⚠️ 중요: 백엔드 서버는 Render.com에 배포되어 있습니다!
+- **서버 URL**: https://mabinogi-party.onrender.com
+- **로컬 Flask 서버 실행 불필요**
+- 이 가이드는 Google Sheets 연동만 다룹니다
+
+자세한 배포 정보는 [README_DEPLOY.md](README_DEPLOY.md)를 참고하세요.
+
+---
 
 ## 📋 목차
 1. [구글 스프레드시트 생성](#1-구글-스프레드시트-생성)
@@ -192,21 +159,16 @@ const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz.../exec';
 
 ## 5. 테스트
 
-### 5-1. Flask 서버 실행
-```powershell
-cd "d:\마비팟\파티모집\새 폴더"
-python app.py
-```
-
-### 5-2. 웹페이지 열기
-1. `index.html` 파일을 브라우저에서 열기
-2. 또는 Python 서버 실행:
+### 5-1. 웹페이지 열기
+1. `index.html` 파일을 브라우저에서 직접 열기
+2. 또는 Python 서버로 로컬 호스팅:
    ```powershell
+   cd "d:\마비팟\파티모집\새 폴더"
    python -m http.server 8080
    ```
    그 후 http://localhost:8080 접속
 
-### 5-3. 파티 등록 테스트
+### 5-2. 파티 등록 테스트
 1. **파티 모집** 탭 클릭
 2. **+ 파티 등록** 버튼 클릭
 3. 정보 입력:
@@ -215,7 +177,7 @@ python app.py
    - **캐릭터 검색** 버튼으로 캐릭터 정보 입력
 4. **등록** 버튼 클릭
 
-### 5-4. 구글 스프레드시트 확인
+### 5-3. 구글 스프레드시트 확인
 1. 구글 스프레드시트로 돌아가기
 2. `파티모집` 시트 확인
 3. 방금 등록한 파티 정보가 표시되어야 함
@@ -265,13 +227,12 @@ python app.py
 ---
 
 ### ⚠️ 문제 5: 캐릭터 검색 안 됨
-**원인**: Flask 서버가 실행되지 않음
+**원인**: Render 서버가 sleep 상태
 
 **해결**:
-```powershell
-python app.py
-```
-Flask 서버가 실행 중인지 확인
+- 첫 검색 시 30초~1분 소요 (정상)
+- 이후 검색은 빠름
+- https://mabinogi-party.onrender.com/health 접속해서 서버 깨우기
 
 ---
 
