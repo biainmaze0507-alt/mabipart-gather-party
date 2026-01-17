@@ -51,7 +51,11 @@ async function loadPartiesFromGoogleSheets() {
         const targetUrl = `${GOOGLE_SCRIPT_URL}?action=getParties`;
         const proxyUrl = `${API_BASE_URL}/api/proxy/sheets?url=${encodeURIComponent(targetUrl)}`;
         console.log('파티 목록 로드 요청(프록시):', proxyUrl);
-        const response = await fetch(proxyUrl);
+        const response = await fetch(proxyUrl, {
+            headers: {
+                'ngrok-skip-browser-warning': 'true'
+            }
+        });
         const data = await response.json();
 
         if (data.success) {
@@ -83,6 +87,7 @@ async function savePartyToGoogleSheets(partyData) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'ngrok-skip-browser-warning': 'true'
             },
             body: JSON.stringify(partyData)
         });
@@ -121,6 +126,7 @@ async function deletePartyFromGoogleSheets(partyId) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'ngrok-skip-browser-warning': 'true'
             },
             body: JSON.stringify({ id: partyId })
         });
@@ -773,7 +779,11 @@ async function searchCharacter() {
     `;
     
     try {
-        const response = await fetch(`${API_BASE_URL}/api/search?name=${encodeURIComponent(characterName)}`);
+        const response = await fetch(`${API_BASE_URL}/api/search?name=${encodeURIComponent(characterName)}`, {
+            headers: {
+                'ngrok-skip-browser-warning': 'true'
+            }
+        });
         const data = await response.json();
         
         if (data.success) {
